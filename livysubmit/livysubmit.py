@@ -3,7 +3,7 @@ import json
 
 import pprint
 import time
-
+import yaml
 
 import argparse
 import getpass
@@ -93,9 +93,8 @@ def make_parser():
     group00 = parser.add_argument_group('Workflow settings', 'Determines what you want to do')
     group0 = group00.add_mutually_exclusive_group(required=True)
 
-    group0.add_argument('-y', '--yaml', action='store', dest='yaml_path',
-                    help='Yaml configuration file')
-
+    group0.add_argument('-y', '--yaml', dest='yaml', metavar='YAML_FILE',
+                    help='Specify the path of the configuration yaml file to use in lieu of individual arguments.')
     group0.add_argument('-s' , '--submit', action='store' , type=argparse.FileType('r'), metavar='PYTHON_SCRIPT', 
                     help='Python script that you want to submit to the cluster')
 
@@ -164,6 +163,15 @@ def make_parser():
 
     return parser
 
+
+def get_yaml(YAML_FILE):
+
+    with open(YAML_FILE['yaml'], 'r') as file:
+        # The FullLoader parameter handles the conversion from YAML
+        # scalar values to Python the dictionary format
+        livy_yaml_args = yaml.load(file, Loader=yaml.FullLoader)
+
+    return livy_yaml_args
 
 def session_list(parsed_arguments):
     sessions = get_sessions( parsed_arguments) 
@@ -551,24 +559,27 @@ def main():
             print('ERROR: keyring library is not available and you did not provide a password')
             sys.exit(1)
 
-    if parsed_arguments['list_sessions']:
+    if parsed_arguments.get('yaml'):
+        session_submit_yaml( parsed_arguments )
+
+    if parsed_arguments.get('list_sessions'):
         session_list( parsed_arguments )
 
-    elif parsed_arguments['id_information'] is not None:
+    elif parsed_arguments.get('id_information'):
         session_information( parsed_arguments )
 
-    elif parsed_arguments['id_delete'] is not None:
+    elif parsed_arguments.get('id_delete'):
         session_delete( parsed_arguments )
 
-    elif parsed_arguments['statement_information'] is not None:
+    elif parsed_arguments.get('statement_information'):
         print_statement_progress( parsed_arguments )
 
 
-    elif parsed_arguments['retrieve_statement'] is not None:
+    elif parsed_arguments.get('retrieve_statement'):
         print_statement( parsed_arguments )
 
-    elif parsed_arguments['retrieve_statement_output'] is not None:
+    elif parsed_arguments.get('retrieve_statement_output'):
         print_statement_output( parsed_arguments )
     
-    elif parsed_arguments['submit'] is not None:
+    elif parsed_arguments.get('submit'):
         submit_script( parsed_arguments )
