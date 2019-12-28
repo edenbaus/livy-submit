@@ -75,7 +75,9 @@ def make_parser():
     parser.prog = 'livy_submit'
 
 
-    parser.add_argument( "--livy-url", action=EnvDefault, envvar='LIVY_SUBMIT_URL', 
+    # parser.add_argument( "--livy-url", action=EnvDefault, envvar='LIVY_SUBMIT_URL', 
+    #                 help="Specify the LIVY URL to process (Can also be specifed by setting the LIVY_SUBMIT_URL environment variable)")
+    parser.add_argument( "--livy-url", action='store', dest='livy_url', metavar='LIVY_SUBMIT_URL', 
                     help="Specify the LIVY URL to process (Can also be specifed by setting the LIVY_SUBMIT_URL environment variable)")
 
 
@@ -90,6 +92,9 @@ def make_parser():
 
     group00 = parser.add_argument_group('Workflow settings', 'Determines what you want to do')
     group0 = group00.add_mutually_exclusive_group(required=True)
+
+    group0.add_argument('-y', '--yaml', action='store', dest='yaml_path',
+                    help='Yaml configuration file')
 
     group0.add_argument('-s' , '--submit', action='store' , type=argparse.FileType('r'), metavar='PYTHON_SCRIPT', 
                     help='Python script that you want to submit to the cluster')
@@ -539,7 +544,7 @@ def main():
     args = parser.parse_args()
 
     parsed_arguments = parse_arguments(args)
-
+    print(parsed_arguments)
 
     if 'keyring' not in sys.modules:
         if parsed_arguments['password'] is None:
