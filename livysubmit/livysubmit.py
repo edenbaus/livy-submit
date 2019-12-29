@@ -5,7 +5,7 @@ import pprint
 import time
 import yaml
 
-import argparse
+import configargparse
 import getpass
 import sys
 import os
@@ -47,7 +47,7 @@ def print_progress(percentage, finished=False, prefix='', suffix='', decimals=1,
 
 
 
-class EnvDefault(argparse.Action):
+class EnvDefault(configargparse.Action):
     def __init__(self, envvar, required=True, default=None, **kwargs):
         if not default and envvar:
             if envvar in os.environ:
@@ -61,7 +61,7 @@ class EnvDefault(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-class Password(argparse.Action):
+class Password(configargparse.Action):
     def __call__(self, parser, namespace, values, option_string):
         if values is None:
             values = getpass.getpass()
@@ -71,7 +71,7 @@ class Password(argparse.Action):
 
 
 def make_parser():
-    parser = argparse.ArgumentParser(description='Submit python script to the spark cluster')
+    parser = configargparse.ArgumentParser(description='Submit python script to the spark cluster')
     parser.prog = 'livy_submit'
 
 
@@ -95,7 +95,11 @@ def make_parser():
 
     group0.add_argument('-y', '--yaml', dest='yaml', metavar='YAML_FILE',
                     help='Specify the path of the configuration yaml file to use in lieu of individual arguments.')
-    group0.add_argument('-s' , '--submit', action='store' , type=argparse.FileType('r'), metavar='PYTHON_SCRIPT', 
+
+    # group0.add_argument('-s' , '--submit', action='store' , type=argparse.FileType('r'), metavar='PYTHON_SCRIPT', 
+    #                 help='Python script that you want to submit to the cluster')
+
+    group0.add_argument('-s' , '--submit', action='store' , dest='submit', metavar='PYTHON_SCRIPT', 
                     help='Python script that you want to submit to the cluster')
 
     group0.add_argument('-l', '--list-sessions', action='store_true' , dest='list_sessions',
@@ -441,7 +445,8 @@ def submit_script(parsed_arguments):
             session_id = parsed_arguments['connect_existing_session']  
         
 
-    file_contents = parsed_arguments['submit'].read()
+    file_contents = open(parsed_arguments['submit'],'r').read()
+
     data_code = {
         'code' : file_contents 
     }
@@ -523,15 +528,13 @@ def parse_arguments( args ):
         else:
             args_dict['username'] = os.environ.get('USERNAME')
     
-    if args_dict['submit'] is not None:
+    if args_dict.get('submit'):
         if args_dict['task_name'] is None:
-            args_dict['task_name']  = os.path.basename( args_dict['submit'].name )
+            args_dict['task_name']  = args_dict['submit']
 
         args_dict['task_name'] = 'LivySubmit - ' + args_dict['task_name']
 
     
-
-
 
     if args_dict['connect_existing_session'] is not None:
         args_dict[ 'keep_session_alive'] = True
